@@ -1,0 +1,22 @@
+{
+    "experiment_name": "padac-shallow-transcriber",
+    "data": {
+      "dataset_path": "/path/to/features/",
+      "labels_path": "/path/to/labels/"
+    },
+    "model": {
+      "name": "LinearModel",
+      "params": {
+        "in_features": 1024,
+        "out_features": 128,
+        "hidden_units": 512
+      },
+      "save_dir": "./runs/transcriber"
+    },
+    "train": {
+        "n_epochs": 1,
+        "lr": 1e-5,
+        "batch_size": 4,
+        "weight_decay": 1e-4
+    }
+}
