@@ -1,0 +1,117 @@
+# Model setup
+DAC.sample_rate: 44100
+DAC.encoder_dim: 64
+DAC.encoder_rates: [2, 4, 8, 8]
+DAC.decoder_dim: 1536
+DAC.decoder_rates: [8, 8, 4, 2]
+DAC.add_conditioner: True
+
+# Quantization
+DAC.n_codebooks: 9
+DAC.codebook_size: 1024
+DAC.codebook_dim: 8
+DAC.quantizer_dropout: 0.5
+
+# Discriminator
+Discriminator.sample_rate: 44100
+Discriminator.rates: []
+Discriminator.periods: [2, 3, 5, 7, 11]
+Discriminator.fft_sizes: [2048, 1024, 512]
+Discriminator.bands:
+  - [0.0, 0.1]
+  - [0.1, 0.25]
+  - [0.25, 0.5]
+  - [0.5, 0.75]
+  - [0.75, 1.0]
+
+# Optimization
+AdamW.betas: [0.8, 0.99]
+AdamW.lr: 0.0001
+ExponentialLR.gamma: 0.999996
+
+amp: false
+val_batch_size: 100
+resume: false
+tag: latest
+device: cuda
+recon_mode: true
+num_iters: 400000
+save_iters: [5000, 10000, 20000, 30000, 50000, 100000, 150000, 200000]
+valid_freq: 1000
+sample_freq: 10000
+num_workers: 32
+val_idx: [0, 1, 2, 3, 4, 5, 6, 7]
+seed: 0
+lambdas:
+  mel/loss: 15.0
+  adv/feat_loss: 2.0
+  adv/gen_loss: 1.0
+  vq/commitment_loss: 0.25
+  vq/codebook_loss: 1.0
+  pitch/loss: 150.0
+
+VolumeNorm.db: [const, -16]
+
+# Transforms
+build_transform.preprocess:
+  - Identity
+build_transform.augment_prob: 0.0
+build_transform.augment:
+  - Identity
+build_transform.postprocess:
+  - VolumeNorm
+  - RescaleAudio
+
+# Loss setup
+MultiScaleSTFTLoss.window_lengths: [2048, 512]
+MelSpectrogramLoss.n_mels: [5, 10, 20, 40, 80, 160, 320]
+MelSpectrogramLoss.window_lengths: [32, 64, 128, 256, 512, 1024, 2048]
+MelSpectrogramLoss.mel_fmin: [0, 0, 0, 0, 0, 0, 0]
+MelSpectrogramLoss.mel_fmax: [null, null, null, null, null, null, null]
+MelSpectrogramLoss.pow: 1.0
+MelSpectrogramLoss.clamp_eps: 1.0e-5
+MelSpectrogramLoss.mag_weight: 0.0
+
+# Data
+batch_size: 72
+train/AudioDataset.duration: 1.0
+train/AudioDataset.n_examples: 10000000
+
+val/AudioDataset.duration: 1.0
+val/build_transform.augment_prob: 1.0
+val/AudioDataset.n_examples: 250
+
+AudioLoader.shuffle: true
+AudioLoader.num_channels: 1
+AudioLoader.ext: [".wav", ".flac", ".mp4", ".au", ".mp3", ".aiff"]
+AudioLoader.basic_pitch: true
+AudioDataset.without_replacement: true
+
+train/build_dataset.folders:
+  gtzan_pop_rock_blues:
+    - /homes/mpm30/audio_full/Gtzan_rock_pop_country/train
+  gtzan_classical:
+    - /homes/mpm30/audio_full/Gtzan_classical/train
+  gtzan_jazz:
+    - /homes/mpm30/audio_full/Gtzan_jazz/train
+  mazurkas:
+    - /homes/mpm30/audio_full/Mazurkas/train
+  violin:
+    - /homes/mpm30/audio_full/bach-violin-dataset/train
+  guitar:
+    - /homes/mpm30/audio_full/guitar/train
+
+
+val/build_dataset.folders:
+  gtzan_pop_rock_blues:
+    - /homes/mpm30/audio_full/Gtzan_rock_pop_country/valid
+  gtzan_classical:
+    - /homes/mpm30/audio_full/Gtzan_classical/valid
+  gtzan_jazz:
+    - /homes/mpm30/audio_full/Gtzan_jazz/valid
+  mazurkas:
+    - /homes/mpm30/audio_full/Mazurkas/valid
+  violin:
+    - /homes/mpm30/audio_full/bach-violin-dataset/valid
+  guitar:
+    - /homes/mpm30/audio_full/guitar/valid

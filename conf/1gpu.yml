@@ -1,0 +1,3 @@
+batch_size: 64
+val_batch_size: 64
+num_workers: 0
