@@ -19,7 +19,7 @@ python -m scripts.train_padac --args.load conf/padac/conf_padac.yml --save_path 
 
 ### 3. Stage 2: shallow transcriber training
 - After freezing PA-DAC, extract and save latent space embeddings using ```latent_space = self.encoder(audio_data)```. Refer to the script *scripts/extract_features.py* for an example.
-- Prepare a config file similar to conf/transcriber.json specifying the paths to the extracted features.
+- Prepare a config file similar to conf/transcriber.json specifying the paths to the extracted features and ground truth.
 - To start training, run the following command:
 ```
 python -m scripts.train_transcriber --config_file ./conf/transcriber.json
