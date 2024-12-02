@@ -7,8 +7,6 @@ Source code for "Pitch-aware generative pretraining improves multi-pitch estimat
 ### 1. Preparation
 - This repo is based on the [DAC repo](https://github.com/descriptinc/descript-audio-codec), accompanying the paper ["High-Fidelity Audio Compression with Improved RVQGAN"](https://arxiv.org/pdf/2306.06546).
 - Please create a virtual environment and install the packages specified in requirements.txt 
-- Add [audiotools-mir](https://github.com/marypilataki/audiotools-mir) as a submodule and checkout the *mpe_labels* branch.
-- Add [Basic Pitch model](https://github.com/spotify/basic-pitch) as a submodule and checkout the *main* branch.
 
 ### 2. Stage 1: pretraining
 - Replace dataset paths in conf/padac/pitch_cond_padac.yml with the paths of the dataset you would like to perform pretraining on.
