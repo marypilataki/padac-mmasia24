@@ -84,7 +84,10 @@ val/AudioDataset.n_examples: 250
 AudioLoader.shuffle: true
 AudioLoader.num_channels: 1
 AudioLoader.ext: [".wav", ".flac", ".mp4", ".au", ".mp3", ".aiff"]
-AudioLoader.basic_pitch: true
+AudioLoader.noisy_labels: true
+AudioLoader.n_notes: 128
+AudioLoader.n_instruments: 1
+normalise_audio: false
 AudioDataset.without_replacement: true
 
 train/build_dataset.folders:
