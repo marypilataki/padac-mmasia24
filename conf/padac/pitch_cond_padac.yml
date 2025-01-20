@@ -87,6 +87,7 @@ AudioLoader.ext: [".wav", ".flac", ".mp4", ".au", ".mp3", ".aiff"]
 AudioLoader.noisy_labels: true
 AudioLoader.n_notes: 128
 AudioLoader.n_instruments: 1
+AudioLoader.codec_rate: 87
 normalise_audio: false
 AudioDataset.without_replacement: true
 
