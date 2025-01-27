@@ -1,26 +1,15 @@
 from pathlib import Path
-import sys
 import torch
 import numpy as np
 from pretty_midi import PrettyMIDI
 import librosa
-import audioread
-import math
+import csv
 import json
 
 DAC_SAMPLE_RATE = 87
 INPUT_DURATION = 1.0
 N_SAMPLES = int(DAC_SAMPLE_RATE * INPUT_DURATION)
 N_NOTES = 128
-
-# tensorflow imports for basic pitch
-#sys.path.append('/homes/mpm30/Dev/dac_for_mir/dac-for-mir/basic-pitch/') if Path(
-#    '/homes/mpm30/Dev/dac_for_mir/dac-for-mir/basic-pitch/').exists() else sys.path.append(
-#    r'C:\Dev\descript_from_git\dac-for-mir\basic-pitch')
-#from basic_pitch import ICASSP_2022_MODEL_PATH
-#from basic_pitch.inference import predict
-#import tensorflow as tf
-import csv
 
 def load_json(path):
     """Loads a json option file
@@ -49,18 +38,7 @@ def load_sol_labels(metadata_path):
                 pitch_dict[row[0]] = int(row[8])-21 # index
     return pitch_dict
 
-"""
-Ground truth dicts
-"""
-# SOL_METADATA_PATH = '/import/c4dm-datasets/TinySOL/TinySOL_metadata.csv'
-# NSYNTH_METADATA_PATH_TRAIN = '/import/c4dm-datasets/nsynth/nsynth-train/examples.json'
-# NSYNTH_METADATA_PATH_VALID = '/import/c4dm-datasets/nsynth/nsynth-valid/examples.json'
-# SOL_PITCH_DICT = load_sol_labels(metadata_path=SOL_METADATA_PATH)
-# nsynth_metadata_train = load_json(NSYNTH_METADATA_PATH_TRAIN)
-# nsynth_metadata_valid = load_json(NSYNTH_METADATA_PATH_VALID)
-# NSYNTH_METADATA = nsynth_metadata_train | nsynth_metadata_valid
-# del nsynth_metadata_train
-# del nsynth_metadata_valid
+
 def resample_label(label, original_sr, new_sr):
     """Function to resample a ground truth roll.
     ----------
@@ -185,151 +163,3 @@ def get_label_excerpt_from_midi(midifile, n_samples, sampling_rate, n_notes=N_NO
     excerpt_end_sample = librosa.time_to_samples(offset + duration, sr=sampling_rate)
     pitch_label = pitch_label[excerpt_start_sample:excerpt_end_sample, :]
     return pitch_label
-
-# def add_pitch_labels_to_batch(batch, use_basic_pitch=False, labels_path=None):
-#     """Function to add pitch labels to a batch of audio data
-#
-#     Parameters
-#     ----------
-#     batch (torch tensor): batch of audio data [batch size, n samples]
-#
-#     Returns
-#     -------
-#     batch (torch tensor): batch of audio data with pitch labels [batch size, n samples, n notes]
-#     """
-#     batch_size = batch['signal'].shape[0]
-#     n_samples = int(batch['signal'].duration * DAC_SAMPLE_RATE)
-#     pitch_labels = torch.zeros((batch_size, n_samples, N_NOTES), dtype=torch.float32)
-#
-#     # use trained basic pitch model to assign pitch labels
-#     if use_basic_pitch==True:
-#         #basic_pitch_model = tf.saved_model.load(str(ICASSP_2022_MODEL_PATH))
-#         for batch_idx in range(batch_size):
-#             _, midi_data, _ = predict(batch["signal"][batch_idx].audio_data.squeeze().squeeze().detach().cpu().numpy(), sample_rate=batch["signal"].sample_rate, model_or_model_path=ICASSP_2022_MODEL_PATH)
-#             pitch_labels[batch_idx] = torch.from_numpy(get_label_from_midi(midi_data, n_samples=n_samples, sampling_rate=DAC_SAMPLE_RATE, n_notes=N_NOTES))
-#         batch['pitch_labels'] = pitch_labels.to(batch['signal'].device)
-#         #print('pitch labels ', batch['pitch_labels'].shape) batch, 87, 128
-#         tf.keras.backend.clear_session()
-#     # use ground truth midi files to assign pitch labels
-#     elif use_basic_pitch==False:
-#         for batch_idx in range(batch_size):
-#             audiofile = Path(batch['path'][batch_idx])
-#             #parents = list(audiofile.parents)
-#             #split = parents[0].name
-#             #with audioread.audio_open(str(audiofile)) as f:
-#             #    audio_duration = f.duration
-#             #    sample_rate = f.samplerate
-#             #    #assert sample_rate == batch['signal'].sample_rate, f"Sample rate {sample_rate} does not match {batch['signal'].sample_rate}!"
-#             #num_samples = math.ceil(sample_rate * audio_duration)
-#             #midifile = parents[1] / f'{split}_labels' / (audiofile.name[:-4] + '.mid')
-#             #if not midifile.exists():
-#             #    midifile = parents[1] / f'{split}_labels' / (audiofile.name[:-4] + '.midi')
-#             #assert midifile.exists(), f"Ground truth midi file {midifile} does not exist!"
-#
-#             #label = get_label_from_midi(midifile, n_samples=num_samples, sampling_rate=sample_rate, n_notes=N_NOTES)
-#             # get excerpt of label corresponding to audio
-#             #start_sample = librosa.time_to_samples(batch['offset'][batch_idx].item(), sr=sample_rate)
-#             #end_sample = librosa.time_to_samples(batch['offset'][batch_idx].item() + 1.0, sr=sample_rate) # duration = 1.0
-#             #label = label[start_sample:end_sample, :]
-#             #label = resample_label(label, original_sr=sample_rate, new_sr=DAC_SAMPLE_RATE)
-#             #pitch_labels[batch_idx] = torch.from_numpy(label)
-#             label_file = labels_path / (str(audiofile.stem)+'.npz')
-#             start_sample = librosa.time_to_samples(batch['offset'][batch_idx].item(), sr=DAC_SAMPLE_RATE)
-#             end_sample = librosa.time_to_samples(batch['offset'][batch_idx].item() + 1.0, sr=DAC_SAMPLE_RATE)
-#             label = np.load(label_file, allow_pickle=True)['pitch_label']
-#             pitch_labels[batch_idx] = torch.from_numpy(label[start_sample:end_sample, :])
-#         batch['pitch_labels'] = pitch_labels.to(batch['signal'].device)
-#     elif use_basic_pitch=='single_note':
-#         # load tinysol metadata
-#         for batch_idx in range(batch_size):
-#             dataset = Path(batch['source'][batch_idx]).parent.stem
-#             key = Path(batch['path'][batch_idx]).stem
-#             label = np.zeros(shape=(87, 128))
-#             if dataset=='TinySOL':
-#                 k = [p for p in SOL_PITCH_DICT.keys() if key in p][0]
-#                 label[:, SOL_PITCH_DICT[k]] = 1
-#             elif dataset=='NSynth':
-#                 label[:, NSYNTH_METADATA[key]['pitch']-21] = 1
-#             else:
-#                 raise ValueError(f"Dataset {dataset} not supported!")
-#
-#             pitch_labels[batch_idx] = torch.from_numpy(label)
-#         batch['pitch_labels'] = pitch_labels.to(batch['signal'].device)
-#     elif use_basic_pitch=='gtzan_only':
-#         basic_pitch_model = tf.saved_model.load(str(ICASSP_2022_MODEL_PATH))
-#         for batch_idx in range(batch_size):
-#             # use basic pitch for gtzan
-#             if Path(batch['source'][batch_idx]).parent.name == 'gtzan':
-#                 _, midi_data, _ = predict(
-#                     batch["signal"][batch_idx].audio_data.squeeze().squeeze().detach().cpu().numpy(),
-#                     sample_rate=batch["signal"].sample_rate, model_or_model_path=basic_pitch_model)
-#                 pitch_labels[batch_idx] = torch.from_numpy(
-#                     get_label_from_midi(midi_data, n_samples=n_samples, sampling_rate=DAC_SAMPLE_RATE, n_notes=N_NOTES))
-#             elif Path(batch['source'][batch_idx]).parent.name == 'maestro': # get ground truth for maestro
-#                 audiofile = Path(batch['path'][batch_idx])
-#                 parents = list(audiofile.parents)
-#                 split = parents[0].name
-#                 with audioread.audio_open(str(audiofile)) as f:
-#                     audio_duration = f.duration
-#                 num_samples = math.ceil(DAC_SAMPLE_RATE * audio_duration)
-#
-#                 midifile = parents[1] / f'{split}_labels' / (audiofile.name[:-4] + '.mid')
-#                 if not midifile.exists():
-#                     midifile = parents[1] / f'{split}_labels' / (audiofile.name[:-4] + '.midi')
-#                 assert midifile.exists(), f"Ground truth midi file {midifile} does not exist!"
-#
-#                 pitch_labels[batch_idx] = torch.from_numpy(
-#                     get_label_from_midi(midifile, n_samples=num_samples, sampling_rate=DAC_SAMPLE_RATE, n_notes=N_NOTES,
-#                                         offset=batch['offset'][batch_idx].item(),
-#                                         duration=batch['signal'][batch_idx].duration))
-#         batch['pitch_labels'] = pitch_labels.to(batch['signal'].device)
-#         tf.keras.backend.clear_session()
-#     else:
-#         raise ValueError(f"use_basic_pitch not supported: {use_basic_pitch}!")
-#     return batch
-
-"""
-todo: add in  audiotools data datasets
-        # todo: add ground truth label
-        item = {
-            "signal": signal,
-            "source_idx": source_idx,
-            "item_idx": item_idx,
-            "source": str(self.sources[source_idx]),
-            "path": str(path),
-            "offset": signal.metadata["offset"]
-        }
-        item['label'] = get_midi_label(item)
-        if self.transform is not None:
-            item["transform_args"] = self.transform.instantiate(state, signal=signal)
-        return item
-
-
-def get_midi_label(item):
-    import librosa
-    import torch
-    from pretty_midi import PrettyMIDI
-    dac_rate = 87
-    start_time = item["offset"]
-    end_time = start_time + item["signal"].duration
-    label_path = Path(item["path"]).parent / (Path(item["path"]).stem + '.midi')
-    num_samples = int(item["signal"].duration * dac_rate)
-    num_notes = 128
-    label = torch.zeros(num_samples, num_notes)
-
-    midi_data = PrettyMIDI(str(label_path))
-    for instrument in midi_data.instruments:
-        if not instrument.is_drum:
-            for note in instrument.notes:
-                if note.start >= start_time:
-                    note_start = librosa.time_to_samples(note.start - start_time, sr=dac_rate)
-                    pitch_index = note.pitch - 21
-                    if note.end <= end_time:
-                        note_end = librosa.time_to_samples(end_time - note.end, sr=dac_rate)
-                        assert note_end => note_start, "End sample must be later than start sample!"
-                        note_end = note_end + 1 if note_end == note_start else note_end
-                        label[note_start:note_end, pitch_index] = 1
-                    else:
-                        label[note_start: , pitch_index] = 1
-    return label
-"""

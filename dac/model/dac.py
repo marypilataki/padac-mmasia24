@@ -281,7 +281,7 @@ class DAC(BaseModel, CodecMixin):
         # pitch classification in latent space
         if self.add_conditioner:
             # B X D X T => B X T X D
-            pitch_class = self.classifier(latent_space.permute(0, 2, 1))
+            pitch_class = self.conditioner(latent_space.permute(0, 2, 1))
 
         z, codes, latents, commitment_loss, codebook_loss = self.quantizer(
             latent_space, n_quantizers

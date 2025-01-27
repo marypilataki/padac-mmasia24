@@ -63,7 +63,8 @@ def main(dac_path, output_dir, dataset_path):
                     chunk = chunk.cuda()
 
                 with torch.no_grad():
-                    latent_space = dac_model.encoder(chunk)
+                    _, _, _, _, _, _, latent_space = dac_model.encode(chunk, return_latent_space=True)
+
 
                 # batch x feat x time => batch x time x feat
                 latent_space = latent_space.permute(0, 2, 1)

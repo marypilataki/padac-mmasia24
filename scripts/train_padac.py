@@ -230,7 +230,7 @@ def val_loop(batch, state, accel, recon_mode=True):
     return_dict = dict()
 
     if state.generator.add_conditioner:
-        return_dict["pitch/loss"] = state.pitch_loss(out["pitch_class"], batch["pitch_labels"])
+        return_dict["pitch/loss"] = state.pitch_loss(out["pitch_class"], batch["label"])
     recons = AudioSignal(out["audio"], signal.sample_rate)
     return_dict.update({
         "loss": state.mel_loss(recons, signal),
@@ -288,7 +288,7 @@ def train_loop(state, batch, accel, lambdas, recon_mode=True):
         output["loss"] = sum([v * output[k] for k, v in lambdas.items() if k in output])
 
         if state.generator.add_conditioner:
-            output["pitch/loss"] = state.pitch_loss(pitch_class, batch["pitch_labels"])
+            output["pitch/loss"] = state.pitch_loss(pitch_class, batch["label"])
 
         # total loss calculation
         output["loss"] = sum([v * output[k] for k, v in lambdas.items() if k in output])
